@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html ng-app="entityApp">
+<head>
+    <meta charset="UTF-8">
+    <title>Entity Management</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+    <style>
+        table {
+          border-collapse: collapse;
+          width: 100%;
+        }
+        th, td {
+          border: 1px solid #333;
+          padding: 8px;
+        }
+        th {
+          color: red;
+        }
+        td {
+          color: blue;
+        }
+        input, button {
+          padding: 6px;
+          margin: 5px;
+        }
+    </style>
+</head>
+<body ng-controller="EntityController">
+
+<h2 style="text-align: center;">Entity Table</h2>
+
+<div style="text-align: center;">
+    <input type="text" ng-model="searchText" placeholder="Search entities..." />
+</div>
+
+
+<hr>
+
+<h3 style="text-align: center;">{{ isEditMode ? 'Update Entity' : 'Add New Entity' }}</h3>
+
+<div style="text-align: center;">
+    <form ng-submit="isEditMode ? updateEntity() : addEntity()">
+        <input type="text" ng-model="formData.name" placeholder="Name" required />
+        <input type="text" ng-model="formData.createdBy" placeholder="Created By" required />
+        <input type="datetime-local" ng-model="formData.createdOn" placeholder="Created On" required />
+        <input type="text" ng-model="formData.modifiedBy" placeholder="Modified By" />
+        <input type="datetime-local" ng-model="formData.modifiedOn" placeholder="Modified On" />
+        <button type="submit">{{ isEditMode ? 'Update' : 'Add' }}</button>
+        <button type="button" ng-click="resetForm()">Clear</button>
+    </form>
+</div>
+<hr>
+<div style="width:700px height:700px">
+        <h3 style="text-align:center;color:orange">See all the details</h3>
+</div>
+<table>
+    <thead>
+    <tr>
+        <th>Entity ID</th>
+        <th>Name</th>
+        <th>Created By</th>
+        <th>Created On</th>
+        <th>Modified By</th>
+        <th>Modified On</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="e in entities | filter:searchText">
+        <td>{{ e.entity_id }}</td>
+        <td>{{ e.name }}</td>
+        <td>{{ e.createdBy }}</td>
+        <td>{{ e.createdOn }}</td>
+        <td>{{ e.modifiedBy }}</td>
+        <td>{{ e.modifiedOn }}</td>
+        <td>
+            <button ng-click="editEntity(e)">Modify</button>
+            <button ng-click="deleteEntity(e.entity_id)">Delete</button>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+
+<script>
+    const app = angular.module("entityApp", []);
+
+    app.controller("EntityController", function($scope, $http) {
+      $scope.entities = [];
+      $scope.searchText = "";
+      $scope.formData = {};
+      $scope.isEditMode = false;
+
+
+      const loadEntities = function() {
+        $http.get("http://localhost:8080/allEntities")
+          .then(res => {
+            $scope.entities = res.data;
+          })
+          .catch(err => console.error("Failed to fetch:", err));
+      };
+
+      loadEntities();
+
+
+      $scope.addEntity = function() {
+        $http.post("http://localhost:8080/saveEntity", $scope.formData)
+          .then(res => {
+            loadEntities();
+            $scope.resetForm();
+          })
+          .catch(err => console.error("Add failed", err));
+      };
+
+
+      $scope.editEntity = function(entity) {
+        $scope.isEditMode = true;
+        $scope.formData = angular.copy(entity);
+      };
+
+
+      $scope.updateEntity = function() {
+        const id = $scope.formData.entity_id;
+        $http.put("http://localhost:8080/Put/" + id, $scope.formData)
+          .then(res => {
+            loadEntities();
+            $scope.resetForm();
+          })
+          .catch(err => console.error("Update failed", err));
+      };
+
+
+      $scope.deleteEntity = function(id) {
+        if (confirm("Are you sure to delete entity ID " + id + "?")) {
+          $http.delete("http://localhost:8080/del/" + id)
+            .then(res => {
+              loadEntities();
+            })
+            .catch(err => console.error("Delete failed", err));
+        }
+      };
+
+
+      $scope.resetForm = function() {
+        $scope.formData = {};
+        $scope.isEditMode = false;
+      };
+    });
+</script>
+
+</body>
+</html>

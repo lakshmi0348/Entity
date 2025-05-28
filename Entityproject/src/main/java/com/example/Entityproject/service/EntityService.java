@@ -3,7 +3,6 @@ import com.example.Entityproject.model.EntityTableDTO;
 import com.example.Entityproject.model.EntityTable;
 import com.example.Entityproject.repository.EntityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,20 +15,19 @@ public class EntityService {
     private EntityRepository entityRepository;
     public List<EntityTableDTO> getAllEntities() {
         List<EntityTable> entities = entityRepository.findAll();
-        List<EntityTableDTO> entityTableDTO ;
-        entityTableDTO= entities.stream()
-                .map(entity -> new EntityTableDTO(
-                        entity.getEntity_id(),
-                        entity.getName(),
-                        entity.getCreatedBy(),
-                        entity.getCreatedOn(),
-                        entity.getModifiedBy(),
-                        entity.getModifiedOn()
-                ))
-                .collect(Collectors.toList());
 
-        return entityTableDTO;
+        return entities.stream().map(entity -> {
+            EntityTableDTO dto = new EntityTableDTO();
+            dto.setEntity_id(entity.getEntity_id());
+            dto.setName(entity.getName());
+            dto.setCreatedBy(entity.getCreatedBy());
+            dto.setCreatedOn(entity.getCreatedOn());
+            dto.setModifiedBy(entity.getModifiedBy());
+            dto.setModifiedOn(entity.getModifiedOn());
+            return dto;
+        }).collect(Collectors.toList());
     }
+
     public EntityTableDTO getEntitiesById(Integer entityId) {
         EntityTable entityTable = entityRepository.findById(entityId)
                 .orElseThrow(() -> new RuntimeException("Entity Id does not exist"));
